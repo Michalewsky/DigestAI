@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="DigestAI maskable icon">
+  <rect width="512" height="512" fill="#111827"/>
+  <circle cx="256" cy="256" r="176" fill="#fff" opacity="0.12"/>
+  <path d="M164 146h136c62 0 112 50 112 112S362 370 300 370h-58v48h-78V146Zm78 78v68h58c19 0 34-15 34-34s-15-34-34-34h-58Z" fill="#fff"/>
+</svg>
