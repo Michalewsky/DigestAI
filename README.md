@@ -35,6 +35,8 @@ See `.env.example`.
    - base64 encoded JSON.
 
 ## Run locally
+Create `.env` in the repository root (same folder as top-level `package.json`).
+
 ```bash
 npm install
 npm run dev
