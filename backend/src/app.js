@@ -1,16 +1,19 @@
 import express from 'express';
 import cors from 'cors';
 import { summarizeInput } from './summarizer.js';
-import { appendSummary, getRecentRows } from './sheets.js';
 import { fetchPreviewText } from './scrape.js';
 
 export function createApp(deps) {
-  const { openai, sheets, env } = deps;
+  const { openai, storage } = deps;
   const app = express();
   const api = express.Router();
 
   app.use(cors());
   app.use(express.json({ limit: '8mb' }));
+
+  app.get('/', (_req, res) => {
+    res.json({ ok: true, message: 'DigestAI backend is running. Use /api/health.' });
+  });
 
   api.get('/health', (_req, res) => {
     res.json({ ok: true });
@@ -37,12 +40,7 @@ export function createApp(deps) {
       const summary = await summarizeInput({ openai, content: rawInput });
       const timestamp = new Date().toISOString();
 
-      await appendSummary({
-        sheets,
-        SHEET_ID: env.SHEET_ID,
-        SHEET_TAB: env.SHEET_TAB,
-        row: [timestamp, title, inputType, summary, rawInputLink || '']
-      });
+      await storage.appendSummary([timestamp, title, inputType, summary, rawInputLink || '']);
 
       return res.json({ timestamp, summary });
     } catch (error) {
@@ -52,12 +50,7 @@ export function createApp(deps) {
 
   api.get('/history', async (_req, res) => {
     try {
-      const rows = await getRecentRows({
-        sheets,
-        SHEET_ID: env.SHEET_ID,
-        SHEET_TAB: env.SHEET_TAB,
-        limit: 10
-      });
+      const rows = await storage.getRecentRows(10);
 
       const mapped = rows.map((row) => ({
         timestamp: row[0] || '',

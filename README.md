@@ -9,30 +9,44 @@ DigestAI is a full-stack PWA with a React + Vite frontend and Node/Express backe
 - GPT-4o-mini summarization in strict format:
   - `Summary: ...`
   - `Facts:` bullet points
-- Google Sheets append logging with service account (backend-only)
+- Local CSV logging (backend-only) for summaries and history
 - History view (last 10 rows)
 - Installable PWA for Android/iOS + desktop browsers
 - Text-based SVG app icons (no binary assets)
 - Error toast notifications
 
 ## Environment variables
-Use **only** these variables:
+Required:
 - `OPENAI_API_KEY`
-- `GOOGLE_SERVICE_ACCOUNT_JSON` (supports raw multiline JSON or base64)
-- `SHEET_ID`
-- `SHEET_TAB`
+
+Optional:
+- `CSV_PATH` (default: `./data/digestai.csv`)
+- `PORT` (default: `8787`)
+
+Optional migration flags (from previous Google Sheets setup):
+- `MIGRATE_FROM_SHEETS=true`
+- `LEGACY_GOOGLE_SERVICE_ACCOUNT_JSON`
+- `LEGACY_SHEET_ID`
+- `LEGACY_SHEET_TAB`
 
 See `.env.example`.
 
-## Google Service Account setup
-1. In Google Cloud Console, create/select a project.
-2. Enable **Google Sheets API**.
-3. Go to IAM & Admin → Service Accounts.
-4. Create a service account and generate a JSON key.
-5. Share the target Google Sheet with the service account email (`...@...iam.gserviceaccount.com`) as Editor.
-6. Set `GOOGLE_SERVICE_ACCOUNT_JSON` with:
-   - raw JSON (single-line or multiline), or
-   - base64 encoded JSON.
+## Storage model (CSV)
+DigestAI stores rows in a local CSV file with columns:
+- A: timestamp
+- B: title
+- C: input_type
+- D: input_summary
+- E: raw_input_link_if_any
+
+The backend auto-creates the file and parent folder if missing.
+
+## Migration from old Google Sheets mode
+If you used the prior version with Google Sheets storage:
+1. Set `MIGRATE_FROM_SHEETS=true` in `.env`.
+2. Fill `LEGACY_GOOGLE_SERVICE_ACCOUNT_JSON`, `LEGACY_SHEET_ID`, `LEGACY_SHEET_TAB`.
+3. Start backend once. It will copy rows into CSV (deduplicated) and log the count.
+4. Set `MIGRATE_FROM_SHEETS=false` after migration.
 
 ## Run locally
 Create `.env` in the repository root (same folder as top-level `package.json`).
@@ -42,7 +56,8 @@ npm install
 npm run dev
 ```
 - Frontend: `http://localhost:5173`
-- Backend: `http://localhost:8787`
+- Backend API: `http://localhost:8787/api/health`
+- Backend root status: `http://localhost:8787/`
 
 ## Test
 ```bash
@@ -53,9 +68,11 @@ npm run test
 - `POST /api/preview` body: `{ "url": "https://..." }`
 - `POST /api/summarize` body: `{ title, inputType, rawInput, rawInputLink }`
 - `GET /api/history`
+- `GET /api/health`
 
 ## Deploy notes
 This repo is deploy-ready for Vercel/Netlify in split mode:
 - Frontend (`frontend/`) as static site build (`npm run build --workspace frontend`)
 - Backend (`backend/`) as Node service (`npm run start --workspace backend`)
 - Configure env vars on hosting platform.
+- For serverless, prefer a persistent volume or external storage instead of local ephemeral filesystem.
